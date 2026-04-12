@@ -1,0 +1,14 @@
+src/
+tests/
+node_modules/
+docs/
+.gitignore
+.github/
+.claude/
+.vscode/
+.tishiki/
+tsconfig.json
+vitest.config.ts
+esbuild.config.mjs
+**/*.map
+*.vsix

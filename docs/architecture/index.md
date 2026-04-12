@@ -51,3 +51,4 @@ src/
 
 - [[architecture/core|Core Module]]
 - [[architecture/extension|VS Code Extension]]
+- [[development/build|Build Pipeline]]

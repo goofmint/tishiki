@@ -1,0 +1,42 @@
+language: "ja"
+early_access: true
+
+reviews:
+  profile: "chill"
+  path_instructions:
+    - path: "src/extension/**"
+      instructions: |
+        - Watch for XSS risks (dangerouslySetInnerHTML, unescaped HTML in webview)
+        - Check for security issues (injection, SSRF, excessive permissions)
+        - Must follow VS Code Extension API conventions
+    - path: "src/webview/**"
+      instructions: |
+        - Watch for XSS risks (dangerouslySetInnerHTML, unescaped HTML in webview)
+        - Enforce React hooks rules, flag unnecessary re-renders in webview components
+        - Check for security issues (injection, SSRF, excessive permissions)
+        - Ensure secure webview content (CSP, no remote content)
+    - path: "src/mcp/**"
+      instructions: |
+        - Validate all inputs at MCP server boundaries
+        - Watch for XSS risks (dangerouslySetInnerHTML, unescaped HTML in webview)
+        - Check for security issues (injection, SSRF, excessive permissions)
+        - src/mcp/ must ensure correct MCP server behavior
+    - path: "docs/**"
+      instructions: |
+        - Check for broken wiki links ([[...]] syntax)
+        - Ensure writing style and terminology consistency
+        - Keep content simple, no emoji allowed
+        - Verify appropriate file splitting
+    - path: "tests/**"
+      instructions: |
+        - Assertions must test actual behavior, not just shape
+        - Tests must be independent (no inter-test dependencies)
+        - Cover edge cases and error paths
+        - Consistent test naming conventions
+        - No if statements in tests
+        - No fallback values in tests
+  path_filters:
+    - "!dist/**"
+    - "!node_modules/**"
+    - "!package-lock.json"
+    - "!*.vsix"
