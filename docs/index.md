@@ -45,5 +45,6 @@ See [[wiki-format]] for details on how to write Wiki pages.
 
 - [[architecture/index|Architecture]]
 - [[mcp/index|MCP Server]]
+- [[development/index|Development]]
 - [[wiki-format|Wiki Format]]
 - [[search|Search Engine]]

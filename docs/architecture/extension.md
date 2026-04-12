@@ -6,6 +6,8 @@ tags:
 
 # VS Code Extension
 
+> **Current status**: Stub implementation. Commands are registered but show "not implemented" messages. Tree view has a stub provider (empty tree). File watcher and webview preview are not yet implemented.
+
 ## Activation
 
 The extension activates when a `docs/` folder exists at the workspace root (`workspaceContains:docs/`).

@@ -14,7 +14,7 @@ Tishiki includes an MCP server that allows AI coding agents to read, write, sear
 npx tishiki-mcp /path/to/docs
 ```
 
-The server uses stdio transport. The `docsRoot` path is passed as a CLI argument, defaulting to `./docs` relative to the current working directory.
+The server uses stdio transport. The `docsRoot` path is passed as a CLI argument, defaulting to `./docs` relative to the current working directory. The path is validated on startup: it must exist and be a directory, otherwise the server exits with a non-zero code.
 
 ## Configuration
 
