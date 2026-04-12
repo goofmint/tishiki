@@ -43,3 +43,4 @@ Press F5 in VS Code to launch the Extension Development Host. The `launch.json` 
 - [[development/build|Build Pipeline]]
 - [[development/testing|Testing]]
 - [[development/project-structure|Project Structure]]
+- [[development/coding-standards|Coding Standards]]

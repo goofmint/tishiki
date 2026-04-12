@@ -92,8 +92,11 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/vscode": "^1.90.0",
+    "@typescript-eslint/eslint-plugin": "^8.58.1",
+    "@typescript-eslint/parser": "^8.58.1",
     "@vscode/vsce": "^3.7.1",
     "esbuild": "^0.25.0",
+    "eslint": "^10.2.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
   },

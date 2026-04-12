@@ -6,7 +6,7 @@ tags:
 
 # Project Structure
 
-```
+```text
 tishiki/
   package.json            # VS Code extension manifest + npm package
   tsconfig.json           # TypeScript config (strict, no emit)
