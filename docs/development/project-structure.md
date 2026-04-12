@@ -11,10 +11,12 @@ tishiki/
   package.json            # VS Code extension manifest + npm package
   tsconfig.json           # TypeScript config (strict, no emit)
   esbuild.config.mjs      # 3-bundle build config
+  eslint.config.mjs       # ESLint flat config (TypeScript)
   vitest.config.ts        # Test config
   LICENSE                 # MIT
   .gitignore
   .vscodeignore           # Excludes src/, tests/, docs/ from .vsix
+  .coderabbit.yaml        # CodeRabbit review config
   .vscode/
     launch.json            # F5 to launch Extension Development Host
     tasks.json             # Build/watch tasks
