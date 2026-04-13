@@ -6,7 +6,7 @@ tags:
 
 # VS Code Extension
 
-> **Current status**: Stub implementation. Commands are registered but show "not implemented" messages. Tree view has a stub provider (empty tree). File watcher and webview preview are not yet implemented.
+> **Current status**: Preview panel is fully functional (Markdown rendering, WikiLink navigation, edit button, auto-preview, file save watch). Commands other than `previewPage` are stubs. Tree view has a stub provider (empty tree).
 
 ## Activation
 
@@ -15,40 +15,47 @@ The extension activates when a `docs/` folder exists at the workspace root (`wor
 On activation:
 
 1. Determines `docsRoot` from the first workspace folder
-2. Creates a FileSystemWatcher on `docs/**/*.md`
+2. Creates a `PreviewManager` instance for webview lifecycle management
 3. Registers commands and the tree view provider
-4. Stores disposables in `context.subscriptions`
+4. Registers document open/save listeners for auto-preview and live update
+5. Stores all disposables in `context.subscriptions`
 
-## Tree View
+## Preview (src/extension/preview.ts)
 
-`WikiTreeDataProvider` implements `vscode.TreeDataProvider`:
+`PreviewManager` manages the WebviewPanel lifecycle:
 
-- Displays the Wiki page hierarchy in the sidebar (Activity Bar)
-- File nodes trigger `tishiki.openPage` on click
-- Auto-refreshes when files change via FileSystemWatcher
-- Manual refresh via `tishiki.refreshTree` command
-
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `tishiki.openPage` | Open a wiki page in the text editor |
-| `tishiki.newPage` | Create a new page (prompts for path) |
-| `tishiki.deletePage` | Delete a page (with confirmation) |
-| `tishiki.previewPage` | Open HTML preview in a Webview panel |
-| `tishiki.refreshTree` | Manually refresh the wiki tree |
-
-## Webview Preview
-
-- Uses `vscode.WebviewPanel` to display rendered HTML
-- Loads the bundled React app (`dist/webview/webview.js`)
-- CSP restricts scripts to the extension's own resources
-- Respects VS Code theme variables for dark/light mode
+- **Panel creation**: `vscode.window.createWebviewPanel` with `enableScripts: true` and scoped `localResourceRoots`
+- **Panel reuse**: If a panel already exists, it is revealed and content is updated (no duplicate panels)
+- **Content delivery**: Reads the file via `vscode.workspace.fs.readFile`, sends raw markdown to the webview via `postMessage`
+- **HTML template**: Generates a CSP-secured HTML shell that loads `dist/webview/webview.js` with a nonce
 
 ### Message Protocol
 
 Extension to Webview:
-- `{ type: 'update', html, title, path }` — Update displayed content
+
+- `{ type: 'content', markdown: string, filePath: string }` — Send page content
 
 Webview to Extension:
-- `{ type: 'navigate', path }` — Request navigation to a wiki page (triggered by wiki-link click)
+
+- `{ type: 'edit', filePath: string }` — Open the file in the text editor
+- `{ type: 'navigate', targetPath: string }` — Navigate to a wiki page (resolves `.md` then `/index.md`)
+- `{ type: 'openExternal', url: string }` — Open an external URL in the browser
+
+### Auto-Preview
+
+- `onDidOpenTextDocument`: When a `.md` file under `docs/` is opened, the preview panel opens automatically
+- `onDidSaveTextDocument`: When the currently previewed file is saved, the content is re-sent to the webview
+
+## Tree View
+
+`WikiTreeProvider` implements `vscode.TreeDataProvider` (stub, returns empty tree).
+
+## Commands
+
+| Command | Description | Status |
+|---------|-------------|--------|
+| `tishiki.openPage` | Open a wiki page in the text editor | Stub |
+| `tishiki.newPage` | Create a new page (prompts for path) | Stub |
+| `tishiki.deletePage` | Delete a page (with confirmation) | Stub |
+| `tishiki.previewPage` | Open HTML preview in a Webview panel | Implemented |
+| `tishiki.refreshTree` | Manually refresh the wiki tree | Stub |

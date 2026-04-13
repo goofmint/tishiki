@@ -1,0 +1,163 @@
+import * as vscode from "vscode";
+import * as path from "node:path";
+
+/** Manages the Tishiki preview WebviewPanel lifecycle and content updates. */
+export class PreviewManager implements vscode.Disposable {
+  private panel: vscode.WebviewPanel | undefined;
+  private currentFileUri: vscode.Uri | undefined;
+  private readonly extensionUri: vscode.Uri;
+  private readonly docsRoot: string;
+
+  constructor(context: vscode.ExtensionContext, docsRoot: string) {
+    this.extensionUri = context.extensionUri;
+    this.docsRoot = docsRoot;
+  }
+
+  /** Opens a preview panel for the given file, or the active editor's file. */
+  async openPreview(fileUri?: vscode.Uri): Promise<void> {
+    const uri = fileUri ?? vscode.window.activeTextEditor?.document.uri;
+    if (!uri || !uri.fsPath.endsWith(".md")) {
+      return;
+    }
+
+    const relativePath = path.relative(this.docsRoot, uri.fsPath);
+    const title = path.basename(uri.fsPath, ".md");
+
+    if (this.panel) {
+      this.panel.reveal(vscode.ViewColumn.Beside);
+      this.panel.title = `Preview: ${title}`;
+    } else {
+      this.panel = vscode.window.createWebviewPanel(
+        "tishiki.preview",
+        `Preview: ${title}`,
+        vscode.ViewColumn.Beside,
+        {
+          enableScripts: true,
+          localResourceRoots: [
+            vscode.Uri.joinPath(this.extensionUri, "dist", "webview"),
+          ],
+        },
+      );
+      this.panel.webview.html = this.getHtml(this.panel.webview);
+      this.panel.webview.onDidReceiveMessage((msg) => this.handleMessage(msg));
+      this.panel.onDidDispose(() => {
+        this.panel = undefined;
+        this.currentFileUri = undefined;
+      });
+    }
+
+    this.currentFileUri = uri;
+    await this.sendContent(uri, relativePath);
+  }
+
+  /** Resends content to the webview if the saved file matches the currently previewed file. */
+  async updateIfActive(fileUri: vscode.Uri): Promise<void> {
+    if (!this.panel || !this.currentFileUri) {
+      return;
+    }
+    if (fileUri.fsPath === this.currentFileUri.fsPath) {
+      const relativePath = path.relative(this.docsRoot, fileUri.fsPath);
+      await this.sendContent(fileUri, relativePath);
+    }
+  }
+
+  /** Disposes the panel if it exists. */
+  dispose(): void {
+    this.panel?.dispose();
+  }
+
+  private async sendContent(uri: vscode.Uri, relativePath: string): Promise<void> {
+    const bytes = await vscode.workspace.fs.readFile(uri);
+    const markdown = new TextDecoder().decode(bytes);
+    await this.panel?.webview.postMessage({
+      type: "content",
+      markdown,
+      filePath: relativePath,
+    });
+  }
+
+  private handleMessage(msg: { type: string; filePath?: string; targetPath?: string; url?: string }): void {
+    switch (msg.type) {
+      case "edit":
+        this.openFileInEditor(msg.filePath);
+        break;
+      case "navigate":
+        this.navigateToPage(msg.targetPath);
+        break;
+      case "openExternal":
+        if (msg.url) {
+          vscode.env.openExternal(vscode.Uri.parse(msg.url));
+        }
+        break;
+    }
+  }
+
+  private openFileInEditor(filePath?: string): void {
+    if (!filePath) {
+      return;
+    }
+    const absPath = path.join(this.docsRoot, filePath);
+    const uri = vscode.Uri.file(absPath);
+    vscode.window.showTextDocument(uri, { viewColumn: vscode.ViewColumn.One });
+  }
+
+  private async navigateToPage(targetPath?: string): Promise<void> {
+    if (!targetPath) {
+      return;
+    }
+    const mdPath = targetPath.endsWith(".md") ? targetPath : `${targetPath}.md`;
+    const absPath = path.join(this.docsRoot, mdPath);
+    const uri = vscode.Uri.file(absPath);
+
+    try {
+      await vscode.workspace.fs.stat(uri);
+      await this.openPreview(uri);
+    } catch {
+      // Try index.md fallback
+      const indexPath = path.join(
+        this.docsRoot,
+        targetPath.replace(/\.md$/, ""),
+        "index.md",
+      );
+      const indexUri = vscode.Uri.file(indexPath);
+      try {
+        await vscode.workspace.fs.stat(indexUri);
+        await this.openPreview(indexUri);
+      } catch {
+        vscode.window.showWarningMessage(`Page not found: ${targetPath}`);
+      }
+    }
+  }
+
+  private getHtml(webview: vscode.Webview): string {
+    const scriptUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "dist", "webview", "webview.js"),
+    );
+    const nonce = getNonce();
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline';">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tishiki Preview</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script nonce="${nonce}" src="${scriptUri}"></script>
+</body>
+</html>`;
+  }
+}
+
+/** Generates a random nonce for CSP. */
+function getNonce(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let nonce = "";
+  for (let i = 0; i < 32; i++) {
+    nonce += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return nonce;
+}
