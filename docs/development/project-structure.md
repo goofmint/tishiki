@@ -24,11 +24,15 @@ tishiki/
     icon.svg               # Extension icon (Activity Bar)
   src/
     extension/
-      extension.ts         # activate/deactivate entry point
+      extension.ts         # activate/deactivate, commands, event listeners
+      preview.ts           # WebviewPanel lifecycle and message handling
     mcp/
-      server.ts            # MCP server entry point
+      server.ts            # MCP server entry point (stub with validation)
     webview/
-      index.tsx            # React app entry point
+      index.tsx            # React app with state management and link handling
+      markdown.ts          # marked + WikiLink extension, frontmatter stripping
+      styles.ts            # VS Code theme-aware CSS
+      vscode.d.ts          # Type declarations for acquireVsCodeApi
     core/                  # Shared logic (not yet implemented)
   tests/
     setup.test.ts          # Test infrastructure verification

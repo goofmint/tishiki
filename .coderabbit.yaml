@@ -1,5 +1,6 @@
 language: "ja"
 early_access: true
+tone_instructions: "Write all reviews in both Japanese and English. Use a friendly, supportive tone even when pointing out issues. Focus on constructive feedback and positive reinforcement, and avoid harsh or negative phrasing."
 
 reviews:
   profile: "chill"
