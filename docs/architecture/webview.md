@@ -38,9 +38,9 @@ All link clicks in the rendered content are intercepted:
 
 | Link Type | Detection | Action |
 |-----------|-----------|--------|
-| WikiLink | `data-wiki-link` attribute | `navigate` message to extension |
+| WikiLink | `data-wiki-link` attribute | `navigate` message to extension, which updates the preview and opens the destination page in the editor |
 | External URL | `http://` or `https://` prefix | `openExternal` message to extension |
-| Relative path | No prefix | `navigate` message (stripped `.md`) |
+| Relative path | No prefix | `navigate` message (stripped `.md`) with the same preview + editor sync behavior |
 
 ## Theme Integration
 

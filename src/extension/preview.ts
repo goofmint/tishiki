@@ -121,10 +121,10 @@ export class PreviewManager implements vscode.Disposable {
         }
         break;
       case "edit":
-        this.openFileInEditor(msg.filePath);
+        void this.openFileInEditor(msg.filePath);
         break;
       case "navigate":
-        this.navigateToPage(msg.targetPath);
+        void this.navigateToPage(msg.targetPath);
         break;
       case "openExternal":
         if (msg.url) {
@@ -134,13 +134,13 @@ export class PreviewManager implements vscode.Disposable {
     }
   }
 
-  private openFileInEditor(filePath?: string): void {
+  private async openFileInEditor(filePath?: string): Promise<void> {
     if (!filePath) {
       return;
     }
     const absPath = path.join(this.docsRoot, filePath);
     const uri = vscode.Uri.file(absPath);
-    vscode.window.showTextDocument(uri, { viewColumn: vscode.ViewColumn.One });
+    await this.openUriInEditor(uri);
   }
 
   private async navigateToPage(targetPath?: string): Promise<void> {
@@ -154,6 +154,7 @@ export class PreviewManager implements vscode.Disposable {
     try {
       await vscode.workspace.fs.stat(uri);
       await this.openPreview(uri);
+      await this.openUriInEditor(uri);
     } catch {
       // Try index.md fallback
       const indexPath = path.join(
@@ -165,10 +166,18 @@ export class PreviewManager implements vscode.Disposable {
       try {
         await vscode.workspace.fs.stat(indexUri);
         await this.openPreview(indexUri);
+        await this.openUriInEditor(indexUri);
       } catch {
         vscode.window.showWarningMessage(`Page not found: ${targetPath}`);
       }
     }
+  }
+
+  private async openUriInEditor(uri: vscode.Uri): Promise<void> {
+    await vscode.window.showTextDocument(uri, {
+      viewColumn: vscode.ViewColumn.One,
+      preserveFocus: false,
+    });
   }
 
   private getHtml(webview: vscode.Webview): string {
