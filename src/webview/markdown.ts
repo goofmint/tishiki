@@ -2,11 +2,19 @@
 import { Marked } from "marked";
 
 const FRONTMATTER_RE = /^---\n[\s\S]*?\n---\n/;
-const WIKI_LINK_RE = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
 
 /** Strips YAML frontmatter from markdown content. */
 export function stripFrontmatter(markdown: string): string {
   return markdown.replace(FRONTMATTER_RE, "");
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 interface WikiLinkToken {
@@ -42,7 +50,7 @@ function createMarked(): Marked {
         },
         renderer(token) {
           const t = token as unknown as WikiLinkToken;
-          return `<a href="#" data-wiki-link="${t.target}">${t.display}</a>`;
+          return `<a href="#" data-wiki-link="${escapeHtml(t.target)}">${escapeHtml(t.display)}</a>`;
         },
       },
     ],
@@ -61,13 +69,4 @@ export function renderMarkdown(markdown: string): string {
     return result;
   }
   return "";
-}
-
-/** Replaces WikiLink syntax with anchor tags in raw HTML fallback. */
-export function replaceWikiLinks(html: string): string {
-  return html.replace(WIKI_LINK_RE, (_match, target: string, display?: string) => {
-    const trimTarget = target.trim();
-    const trimDisplay = display?.trim() ?? trimTarget;
-    return `<a href="#" data-wiki-link="${trimTarget}">${trimDisplay}</a>`;
-  });
 }

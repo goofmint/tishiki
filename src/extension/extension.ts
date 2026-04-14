@@ -51,15 +51,18 @@ export function activate(context: vscode.ExtensionContext): void {
       if (!editor) {
         return;
       }
-      const fsPath = editor.document.uri.fsPath;
-      if (fsPath.startsWith(docsRoot) && fsPath.endsWith(".md")) {
+      if (isUnderDocsRoot(editor.document.uri.fsPath, docsRoot)) {
         vscode.commands.executeCommand("tishiki.previewPage", editor.document.uri);
       }
     }),
     // Re-send content on file save
-    vscode.workspace.onDidSaveTextDocument((doc) => {
-      if (doc.uri.fsPath.startsWith(docsRoot) && doc.uri.fsPath.endsWith(".md")) {
-        previewManager.updateIfActive(doc.uri);
+    vscode.workspace.onDidSaveTextDocument(async (doc) => {
+      if (isUnderDocsRoot(doc.uri.fsPath, docsRoot)) {
+        try {
+          await previewManager.updateIfActive(doc.uri);
+        } catch (err) {
+          console.error("tishiki: updateIfActive failed", err);
+        }
       }
     }),
     previewManager,
@@ -67,12 +70,22 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Preview the currently active editor if it's already a docs/ markdown file
   const activeEditor = vscode.window.activeTextEditor;
-  if (activeEditor) {
-    const fsPath = activeEditor.document.uri.fsPath;
-    if (fsPath.startsWith(docsRoot) && fsPath.endsWith(".md")) {
-      vscode.commands.executeCommand("tishiki.previewPage", activeEditor.document.uri);
-    }
+  if (activeEditor && isUnderDocsRoot(activeEditor.document.uri.fsPath, docsRoot)) {
+    vscode.commands.executeCommand("tishiki.previewPage", activeEditor.document.uri);
   }
+}
+
+function isUnderDocsRoot(fsPath: string, docsRoot: string): boolean {
+  if (!fsPath.endsWith(".md")) {
+    return false;
+  }
+  const resolvedRoot = path.resolve(docsRoot);
+  const resolvedPath = path.resolve(fsPath);
+  const caseInsensitive = process.platform === "win32" || process.platform === "darwin";
+  const a = caseInsensitive ? resolvedRoot.toLowerCase() : resolvedRoot;
+  const b = caseInsensitive ? resolvedPath.toLowerCase() : resolvedPath;
+  const rel = path.relative(a, b);
+  return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
 }
 
 /** Deactivates the Tishiki extension. */

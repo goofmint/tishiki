@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { renderMarkdown } from "./markdown";
 import { globalStyles } from "./styles";
 
@@ -15,7 +15,6 @@ interface ContentMessage {
 function App() {
   const [html, setHtml] = useState("");
   const [filePath, setFilePath] = useState("");
-  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (event: MessageEvent<ContentMessage>) => {
@@ -89,7 +88,6 @@ function App() {
         </div>
         <div
           className="tishiki-content"
-          ref={contentRef}
           onClick={handleContentClick}
           dangerouslySetInnerHTML={{ __html: html }}
         />
