@@ -3,6 +3,11 @@ early_access: true
 
 reviews:
   profile: "chill"
+  tone_instructions: |
+    - All reviews and comments should be in Japanese and English.
+    - Use a friendly and supportive tone, even when pointing out issues.
+    - Focus on constructive feedback and positive reinforcement.
+    - Avoid harsh language or negative phrasing, even when addressing problems.
   path_instructions:
     - path: "src/extension/**"
       instructions: |

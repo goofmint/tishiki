@@ -46,10 +46,14 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("tishiki.refreshTree", () => {
       vscode.window.showInformationMessage("Tishiki: refreshTree (not implemented)");
     }),
-    // Auto-preview when opening a markdown file under docs/
-    vscode.workspace.onDidOpenTextDocument((doc) => {
-      if (doc.uri.fsPath.startsWith(docsRoot) && doc.uri.fsPath.endsWith(".md")) {
-        vscode.commands.executeCommand("tishiki.previewPage", doc.uri);
+    // Auto-preview when switching to a docs/ markdown file
+    vscode.window.onDidChangeActiveTextEditor((editor) => {
+      if (!editor) {
+        return;
+      }
+      const fsPath = editor.document.uri.fsPath;
+      if (fsPath.startsWith(docsRoot) && fsPath.endsWith(".md")) {
+        vscode.commands.executeCommand("tishiki.previewPage", editor.document.uri);
       }
     }),
     // Re-send content on file save
@@ -60,6 +64,15 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     previewManager,
   );
+
+  // Preview the currently active editor if it's already a docs/ markdown file
+  const activeEditor = vscode.window.activeTextEditor;
+  if (activeEditor) {
+    const fsPath = activeEditor.document.uri.fsPath;
+    if (fsPath.startsWith(docsRoot) && fsPath.endsWith(".md")) {
+      vscode.commands.executeCommand("tishiki.previewPage", activeEditor.document.uri);
+    }
+  }
 }
 
 /** Deactivates the Tishiki extension. */

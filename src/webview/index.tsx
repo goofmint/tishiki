@@ -26,6 +26,7 @@ function App() {
       }
     };
     window.addEventListener("message", handler);
+    vscodeApi.postMessage({ type: "ready" });
     return () => window.removeEventListener("message", handler);
   }, []);
 

@@ -7,6 +7,8 @@ export class PreviewManager implements vscode.Disposable {
   private currentFileUri: vscode.Uri | undefined;
   private readonly extensionUri: vscode.Uri;
   private readonly docsRoot: string;
+  private webviewReady = false;
+  private pendingContent: { markdown: string; filePath: string } | undefined;
 
   constructor(context: vscode.ExtensionContext, docsRoot: string) {
     this.extensionUri = context.extensionUri;
@@ -23,26 +25,52 @@ export class PreviewManager implements vscode.Disposable {
     const relativePath = path.relative(this.docsRoot, uri.fsPath);
     const title = path.basename(uri.fsPath, ".md");
 
+    // Ensure the markdown editor lives in column One so it can't displace
+    // the preview panel in column Two when opened from the file tree.
+    // We can't just call showTextDocument(col One) — that would open a
+    // duplicate and leave the original tab in the wrong column. Instead
+    // locate the tab, close it, and reopen in column One.
+    const misplacedTab = vscode.window.tabGroups.all
+      .flatMap((g) => g.tabs)
+      .find(
+        (t) =>
+          t.input instanceof vscode.TabInputText &&
+          t.input.uri.fsPath === uri.fsPath &&
+          t.group.viewColumn !== vscode.ViewColumn.One,
+      );
+    if (misplacedTab) {
+      await vscode.window.tabGroups.close(misplacedTab);
+      await vscode.window.showTextDocument(uri, {
+        viewColumn: vscode.ViewColumn.One,
+        preserveFocus: false,
+      });
+    }
+
     if (this.panel) {
-      this.panel.reveal(vscode.ViewColumn.Beside);
+      this.panel.reveal(vscode.ViewColumn.Two, true);
       this.panel.title = `Preview: ${title}`;
     } else {
       this.panel = vscode.window.createWebviewPanel(
         "tishiki.preview",
         `Preview: ${title}`,
-        vscode.ViewColumn.Beside,
+        { viewColumn: vscode.ViewColumn.Two, preserveFocus: true },
         {
           enableScripts: true,
+          retainContextWhenHidden: true,
           localResourceRoots: [
             vscode.Uri.joinPath(this.extensionUri, "dist", "webview"),
           ],
         },
       );
+      this.webviewReady = false;
+      this.pendingContent = undefined;
       this.panel.webview.html = this.getHtml(this.panel.webview);
       this.panel.webview.onDidReceiveMessage((msg) => this.handleMessage(msg));
       this.panel.onDidDispose(() => {
         this.panel = undefined;
         this.currentFileUri = undefined;
+        this.webviewReady = false;
+        this.pendingContent = undefined;
       });
     }
 
@@ -69,6 +97,12 @@ export class PreviewManager implements vscode.Disposable {
   private async sendContent(uri: vscode.Uri, relativePath: string): Promise<void> {
     const bytes = await vscode.workspace.fs.readFile(uri);
     const markdown = new TextDecoder().decode(bytes);
+    if (!this.webviewReady) {
+      // Webview hasn't mounted yet; queue the latest content for the
+      // ready handshake to flush. Overwrites any older pending content.
+      this.pendingContent = { markdown, filePath: relativePath };
+      return;
+    }
     await this.panel?.webview.postMessage({
       type: "content",
       markdown,
@@ -78,6 +112,14 @@ export class PreviewManager implements vscode.Disposable {
 
   private handleMessage(msg: { type: string; filePath?: string; targetPath?: string; url?: string }): void {
     switch (msg.type) {
+      case "ready":
+        this.webviewReady = true;
+        if (this.pendingContent) {
+          const { markdown, filePath } = this.pendingContent;
+          this.pendingContent = undefined;
+          this.panel?.webview.postMessage({ type: "content", markdown, filePath });
+        }
+        break;
       case "edit":
         this.openFileInEditor(msg.filePath);
         break;
