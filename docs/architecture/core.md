@@ -24,7 +24,7 @@ Markdown and frontmatter processing:
 
 - **parseFrontmatter()** — Uses gray-matter to extract YAML frontmatter and body content
 - **extractWikiLinks()** — Regex extraction of `[[target]]` and `[[target|display]]` patterns
-- **renderMarkdown()** — markdown-it with a custom wiki-link plugin that transforms `[[links]]` into `<a>` elements
+- **renderMarkdown()** — Planned for `src/core/`. Currently, Markdown rendering lives in `src/webview/markdown.ts` using `marked` with a custom WikiLink extension
 - **resolveWikiPath()** — Resolves link targets relative to the current page or as absolute from docs root
 
 ## wiki.ts

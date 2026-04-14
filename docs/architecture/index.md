@@ -16,28 +16,23 @@ Tishiki is a single npm package that produces three separate esbuild bundles:
 
 ## Source Structure
 
-```
+```text
 src/
   core/               # Shared logic (extension + MCP both import)
-    types.ts           # Type definitions
-    parser.ts          # Markdown parsing, frontmatter, wiki-link extraction
-    wiki.ts            # CRUD and listing operations
-    search.ts          # Flexsearch engine (multilingual)
+    types.ts           # Type definitions (not yet implemented)
+    parser.ts          # Markdown parsing, frontmatter, wiki-link extraction (not yet implemented)
+    wiki.ts            # CRUD and listing operations (not yet implemented)
+    search.ts          # Flexsearch engine (not yet implemented)
   extension/           # VS Code extension
-    extension.ts       # activate/deactivate
-    commands.ts        # Command registrations
-    treeView.ts        # Sidebar wiki tree
-    preview.ts         # Webview panel management
+    extension.ts       # activate/deactivate, command registration, event listeners
+    preview.ts         # WebviewPanel lifecycle, content delivery, message handling
   webview/             # React (preview UI)
-    index.tsx
-    App.tsx
-    components/
+    index.tsx          # App component with state management and link handling
+    markdown.ts        # marked + WikiLink extension, frontmatter stripping
+    styles.ts          # VS Code theme-aware CSS
+    vscode.d.ts        # Type declarations for acquireVsCodeApi
   mcp/                 # MCP server
-    server.ts          # Entry point (stdio transport)
-    tools/
-      crud.ts
-      search.ts
-      list.ts
+    server.ts          # Entry point with docsRoot validation (stub)
 ```
 
 ## Key Design Decisions
@@ -51,4 +46,5 @@ src/
 
 - [[architecture/core|Core Module]]
 - [[architecture/extension|VS Code Extension]]
+- [[architecture/webview|Webview Preview]]
 - [[development/build|Build Pipeline]]

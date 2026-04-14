@@ -99,7 +99,7 @@ Debug the VS Code extension by pressing F5 to launch the Extension Development H
 - TypeScript (strict)
 - esbuild
 - React (Webview)
-- markdown-it + gray-matter
+- marked
 - Flexsearch (multilingual full-text search with bigram tokenization for CJK)
 - @modelcontextprotocol/sdk
 - zod
