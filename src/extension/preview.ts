@@ -7,12 +7,14 @@ export class PreviewManager implements vscode.Disposable {
   private currentFileUri: vscode.Uri | undefined;
   private readonly extensionUri: vscode.Uri;
   private readonly docsRoot: string;
+  private readonly resolvedDocsRoot: string;
   private webviewReady = false;
   private pendingContent: { markdown: string; filePath: string } | undefined;
 
   constructor(context: vscode.ExtensionContext, docsRoot: string) {
     this.extensionUri = context.extensionUri;
     this.docsRoot = docsRoot;
+    this.resolvedDocsRoot = path.resolve(docsRoot);
   }
 
   /** Opens a preview panel for the given file, or the active editor's file. */
@@ -121,10 +123,10 @@ export class PreviewManager implements vscode.Disposable {
         }
         break;
       case "edit":
-        this.openFileInEditor(msg.filePath);
+        void this.openFileInEditor(msg.filePath);
         break;
       case "navigate":
-        this.navigateToPage(msg.targetPath);
+        void this.navigateToPage(msg.targetPath);
         break;
       case "openExternal":
         if (msg.url) {
@@ -134,41 +136,78 @@ export class PreviewManager implements vscode.Disposable {
     }
   }
 
-  private openFileInEditor(filePath?: string): void {
+  private async openFileInEditor(filePath?: string): Promise<void> {
     if (!filePath) {
       return;
     }
-    const absPath = path.join(this.docsRoot, filePath);
-    const uri = vscode.Uri.file(absPath);
-    vscode.window.showTextDocument(uri, { viewColumn: vscode.ViewColumn.One });
+    const resolvedPath = this.resolveDocsPath(filePath);
+    if (!resolvedPath) {
+      vscode.window.showWarningMessage(`Invalid file path: ${filePath}`);
+      return;
+    }
+    const uri = vscode.Uri.file(resolvedPath);
+    await this.openUriInEditor(uri);
   }
 
   private async navigateToPage(targetPath?: string): Promise<void> {
     if (!targetPath) {
       return;
     }
-    const mdPath = targetPath.endsWith(".md") ? targetPath : `${targetPath}.md`;
-    const absPath = path.join(this.docsRoot, mdPath);
-    const uri = vscode.Uri.file(absPath);
+    const normalizedTarget = path.normalize(targetPath);
+    if (path.isAbsolute(normalizedTarget)) {
+      vscode.window.showWarningMessage(`Invalid page path: ${targetPath}`);
+      return;
+    }
+
+    const mdPath = normalizedTarget.endsWith(".md") ? normalizedTarget : `${normalizedTarget}.md`;
+    const resolvedPath = this.resolveDocsPath(mdPath);
+    if (!resolvedPath) {
+      vscode.window.showWarningMessage(`Invalid page path: ${targetPath}`);
+      return;
+    }
+
+    const uri = vscode.Uri.file(resolvedPath);
 
     try {
       await vscode.workspace.fs.stat(uri);
       await this.openPreview(uri);
+      await this.openUriInEditor(uri);
     } catch {
       // Try index.md fallback
-      const indexPath = path.join(
-        this.docsRoot,
-        targetPath.replace(/\.md$/, ""),
-        "index.md",
+      const indexPath = this.resolveDocsPath(
+        path.join(normalizedTarget.replace(/\.md$/, ""), "index.md"),
       );
+      if (!indexPath) {
+        vscode.window.showWarningMessage(`Invalid page path: ${targetPath}`);
+        return;
+      }
       const indexUri = vscode.Uri.file(indexPath);
       try {
         await vscode.workspace.fs.stat(indexUri);
         await this.openPreview(indexUri);
+        await this.openUriInEditor(indexUri);
       } catch {
         vscode.window.showWarningMessage(`Page not found: ${targetPath}`);
       }
     }
+  }
+
+  private async openUriInEditor(uri: vscode.Uri): Promise<void> {
+    await vscode.window.showTextDocument(uri, {
+      viewColumn: vscode.ViewColumn.One,
+      preserveFocus: false,
+    });
+  }
+
+  private resolveDocsPath(candidatePath: string): string | undefined {
+    const resolvedPath = path.resolve(this.docsRoot, candidatePath);
+    if (
+      resolvedPath !== this.resolvedDocsRoot &&
+      !resolvedPath.startsWith(`${this.resolvedDocsRoot}${path.sep}`)
+    ) {
+      return undefined;
+    }
+    return resolvedPath;
   }
 
   private getHtml(webview: vscode.Webview): string {

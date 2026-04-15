@@ -6,7 +6,7 @@ tags:
 
 # VS Code Extension
 
-> **Current status**: Preview panel is fully functional (Markdown rendering, WikiLink navigation, edit button, auto-preview, file save watch). Commands other than `previewPage` are stubs. Tree view has a stub provider (empty tree).
+> **Current status**: Preview panel is fully functional (Markdown rendering, WikiLink navigation with editor sync, edit button, auto-preview, file save watch). Commands other than `previewPage` are stubs. Tree view has a stub provider (empty tree).
 
 ## Activation
 
@@ -27,6 +27,7 @@ On activation:
 - **Panel creation**: `vscode.window.createWebviewPanel` with `enableScripts: true` and scoped `localResourceRoots`
 - **Panel reuse**: If a panel already exists, it is revealed and content is updated (no duplicate panels)
 - **Content delivery**: Reads the file via `vscode.workspace.fs.readFile`, sends raw markdown to the webview via `postMessage`
+- **Editor sync**: Internal navigation opens the resolved Markdown file in editor column One and moves keyboard focus there
 - **HTML template**: Generates a CSP-secured HTML shell that loads `dist/webview/webview.js` with a nonce
 
 ### Message Protocol
@@ -37,8 +38,8 @@ Extension to Webview:
 
 Webview to Extension:
 
-- `{ type: 'edit', filePath: string }` — Open the file in the text editor
-- `{ type: 'navigate', targetPath: string }` — Navigate to a wiki page (resolves `.md` then `/index.md`)
+- `{ type: 'edit', filePath: string }` — Open the file in the text editor in column One
+- `{ type: 'navigate', targetPath: string }` — Navigate to a wiki page (resolves `.md` then `/index.md`), update the preview, and open the destination file in the text editor
 - `{ type: 'openExternal', url: string }` — Open an external URL in the browser
 
 ### Auto-Preview

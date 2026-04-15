@@ -22,12 +22,12 @@ npm install
 | Script | Description |
 |--------|-------------|
 | `npm run build` | Build all 3 bundles (extension, MCP server, webview) |
+| `npm run package` | Build and generate a `.vsix` package. Run this whenever a build is part of the verification flow |
 | `npm run watch` | Watch mode for development |
 | `npm run typecheck` | TypeScript type checking (no emit) |
 | `npm run test` | Run tests (vitest) |
 | `npm run test:watch` | Run tests in watch mode |
 | `npm run lint` | ESLint |
-| `npm run package` | Generate `.vsix` file |
 
 ## Running the Extension
 

@@ -41,3 +41,14 @@ npm run watch
 ```
 
 Creates esbuild contexts for all three bundles and watches for file changes.
+
+## Verification Rule
+
+When a task includes a build as part of implementation verification, run both commands:
+
+```bash
+npm run build
+npm run package
+```
+
+`npm run package` is treated as required in the build verification flow so the extension packaging step is checked alongside bundle generation.
